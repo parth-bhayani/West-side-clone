@@ -7,9 +7,24 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 In the project directory, you can run:
 
 ### `npm start`
+# West Side Clone
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+A modern e-commerce web application built with React.
+
+## Live Demo
+https://your-vercel-url.vercel.app
+
+## Features
+- User Login & Register
+- Shopping Cart
+- Wishlist
+- Admin Panel
+- Product Management
+
+## Tech Stack
+- React
+- Firebase
+- CSS
 
 The page will reload when you make changes.\
 You may also see any lint errors in the console.
