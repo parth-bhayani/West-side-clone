@@ -1,6 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { FiUsers, FiBox, FiShoppingCart, FiDollarSign, FiTrendingUp, FiAlertCircle } from 'react-icons/fi';
+import { FiUsers, FiBox, FiShoppingCart, FiDollarSign, FiTrendingUp, FiAlertCircle, FiPieChart } from 'react-icons/fi';
+import {
+    LineChart,
+    Line,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    Legend,
+    ResponsiveContainer,
+    PieChart,
+    Pie,
+    Cell
+} from 'recharts';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -24,9 +37,33 @@ const Dashboard = () => {
 
     if (loading) return <div className="loader"><div className="spinner"></div></div>;
 
+    // Format monthly sales data for the chart
+    const chartData = stats?.monthlySales?.map(item => {
+        const [year, month] = item._id.split('-');
+        const monthName = new Date(year, month - 1).toLocaleString('default', { month: 'short' });
+        return {
+            name: monthName,
+            sales: item.sales,
+            orders: item.orders
+        };
+    }) || [];
+
+    // Format order status data for pie chart
+    const statusData = [
+        { name: 'Pending', value: stats?.stats?.pendingOrders || 0, color: '#ffc107' },
+        { name: 'Processing', value: stats?.stats?.processingOrders || 0, color: '#007bff' },
+        { name: 'Shipped', value: stats?.stats?.shippedOrders || 0, color: '#17a2b8' },
+        { name: 'Delivered', value: stats?.stats?.deliveredOrders || 0, color: '#28a745' }
+    ].filter(item => item.value > 0);
+
+    const COLORS = statusData.map(item => item.color);
+
     return (
         <div className="dashboard">
-            <h1>Dashboard</h1>
+            <div className="dashboard-header">
+                <h1>Dashboard Overview</h1>
+                <p className="subtitle">Real-time business analytics and store performance</p>
+            </div>
 
             <div className="stats-grid">
                 <div className="stat-card">
@@ -59,8 +96,81 @@ const Dashboard = () => {
                 </div>
             </div>
 
+            <div className="charts-grid">
+                <div className="dashboard-card chart-container sales-chart">
+                    <h2><FiTrendingUp /> Sales & Orders Trend</h2>
+                    <div className="chart-wrapper">
+                        {chartData.length > 0 ? (
+                            <ResponsiveContainer width="100%" height={300}>
+                                <LineChart data={chartData}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                                    <YAxis yAxisId="left" axisLine={false} tickLine={false} tickFormatter={(value) => `₹${value}`} />
+                                    <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} />
+                                    <Tooltip
+                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                        formatter={(value, name) => [name === 'sales' ? `₹${value.toLocaleString()}` : value, name === 'sales' ? 'Revenue' : 'Orders']}
+                                    />
+                                    <Legend />
+                                    <Line
+                                        yAxisId="left"
+                                        type="monotone"
+                                        dataKey="sales"
+                                        stroke="#d4a574"
+                                        strokeWidth={3}
+                                        dot={{ r: 4, fill: '#d4a574', strokeWidth: 2, stroke: '#fff' }}
+                                        activeDot={{ r: 6 }}
+                                        name="Revenue"
+                                    />
+                                    <Line
+                                        yAxisId="right"
+                                        type="monotone"
+                                        dataKey="orders"
+                                        stroke="#1a1a1a"
+                                        strokeWidth={2}
+                                        strokeDasharray="5 5"
+                                        name="Orders"
+                                    />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className="no-chart-data">
+                                <p>No sales data available for the last 6 months</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className="dashboard-card chart-container status-chart">
+                    <h2><FiPieChart /> Order Distribution</h2>
+                    <div className="chart-wrapper">
+                        <ResponsiveContainer width="100%" height={300}>
+                            <PieChart>
+                                <Pie
+                                    data={statusData}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={60}
+                                    outerRadius={80}
+                                    paddingAngle={5}
+                                    dataKey="value"
+                                >
+                                    {statusData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip
+                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                />
+                                <Legend verticalAlign="bottom" height={36} />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+            </div>
+
             <div className="dashboard-grid">
-                <div className="dashboard-card">
+                <div className="dashboard-card recent-orders">
                     <h2><FiShoppingCart /> Recent Orders</h2>
                     <div className="orders-list">
                         {stats?.recentOrders?.length > 0 ? (
@@ -80,7 +190,7 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                <div className="dashboard-card">
+                <div className="dashboard-card low-stock">
                     <h2><FiAlertCircle /> Low Stock Products</h2>
                     <div className="products-list">
                         {stats?.lowStockProducts?.length > 0 ? (
@@ -98,19 +208,10 @@ const Dashboard = () => {
                         )}
                     </div>
                 </div>
-
-                <div className="dashboard-card order-stats">
-                    <h2><FiTrendingUp /> Order Status</h2>
-                    <div className="status-list">
-                        <div className="status-item"><span>Pending</span><strong>{stats?.stats?.pendingOrders || 0}</strong></div>
-                        <div className="status-item"><span>Processing</span><strong>{stats?.stats?.processingOrders || 0}</strong></div>
-                        <div className="status-item"><span>Shipped</span><strong>{stats?.stats?.shippedOrders || 0}</strong></div>
-                        <div className="status-item"><span>Delivered</span><strong>{stats?.stats?.deliveredOrders || 0}</strong></div>
-                    </div>
-                </div>
             </div>
         </div>
     );
 };
 
 export default Dashboard;
+

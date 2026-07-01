@@ -28,6 +28,7 @@ app.use('/api/orders', require('./routes/orders'));
 app.use('/api/cart', require('./routes/cart'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/wishlist', require('./routes/wishlist'));
+app.use('/api/chat', require('./routes/chat'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

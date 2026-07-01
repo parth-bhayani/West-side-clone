@@ -6,6 +6,7 @@ const bcrypt = require('bcryptjs');
 const User = require('./models/User');
 const Category = require('./models/Category');
 const Product = require('./models/Product');
+const Order = require('./models/Order');
 
 dotenv.config();
 
@@ -18,6 +19,7 @@ const seedData = async () => {
         await User.deleteMany();
         await Category.deleteMany();
         await Product.deleteMany();
+        await Order.deleteMany();
 
         console.log('Data cleared...');
 
@@ -220,8 +222,54 @@ const seedData = async () => {
             }
         ];
 
-        await Product.insertMany(products);
+        const createdProducts = await Product.insertMany(products);
         console.log(`${products.length} products created...`);
+
+        // Create sample orders for the last 6 months
+        const users = await User.find({ role: 'user' });
+        const orders = [];
+        const statuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+
+        for (let i = 0; i < 20; i++) {
+            const randomProduct = createdProducts[Math.floor(Math.random() * createdProducts.length)];
+            const randomUser = users[Math.floor(Math.random() * users.length)];
+            const randomStatus = statuses[Math.floor(Math.random() * (statuses.length - 1))]; // Avoid most cancelled for trends
+            
+            // Generate a random date within the last 6 months
+            const date = new Date();
+            date.setMonth(date.getMonth() - Math.floor(Math.random() * 6));
+            date.setDate(Math.floor(Math.random() * 28) + 1);
+
+            orders.push({
+                user: randomUser._id,
+                orderItems: [{
+                    product: randomProduct._id,
+                    name: randomProduct.name,
+                    image: randomProduct.images[0],
+                    quantity: Math.floor(Math.random() * 3) + 1,
+                    price: randomProduct.price
+                }],
+                shippingAddress: {
+                    name: randomUser.name,
+                    phone: '9876543210',
+                    street: '123 Sample St',
+                    city: 'Mumbai',
+                    state: 'Maharashtra',
+                    pincode: '400001'
+                },
+                paymentMethod: 'COD',
+                itemsPrice: randomProduct.price,
+                taxPrice: Math.floor(randomProduct.price * 0.18),
+                shippingPrice: 100,
+                totalPrice: Math.floor(randomProduct.price * 1.18) + 100,
+                isPaid: Math.random() > 0.5,
+                status: randomStatus,
+                createdAt: date
+            });
+        }
+
+        await Order.insertMany(orders);
+        console.log(`${orders.length} sample orders created...`);
 
         console.log('\n✅ Database seeded successfully!');
         console.log('\nLogin credentials:');

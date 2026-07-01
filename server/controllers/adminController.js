@@ -131,7 +131,7 @@ const getDashboardStats = async (req, res) => {
         sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
         const monthlySales = await Order.aggregate([
-            { $match: { createdAt: { $gte: sixMonthsAgo }, isPaid: true } },
+            { $match: { createdAt: { $gte: sixMonthsAgo }, status: { $ne: 'cancelled' } } },
             {
                 $group: {
                     _id: { $dateToString: { format: '%Y-%m', date: '$createdAt' } },

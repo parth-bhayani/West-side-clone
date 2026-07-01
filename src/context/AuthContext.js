@@ -57,6 +57,24 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const loginWithPhone = async (phone, firebaseToken) => {
+        try {
+            const { data } = await axios.post('/api/auth/phone-login', {
+                phone,
+                firebaseToken
+            });
+            setUser(data);
+            localStorage.setItem('user', JSON.stringify(data));
+            axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
+            return { success: true };
+        } catch (error) {
+            return {
+                success: false,
+                message: error.response?.data?.message || 'Phone login failed'
+            };
+        }
+    };
+
     const logout = () => {
         setUser(null);
         localStorage.removeItem('user');
@@ -82,6 +100,7 @@ export const AuthProvider = ({ children }) => {
             user,
             loading,
             login,
+            loginWithPhone,
             register,
             logout,
             updateProfile,
